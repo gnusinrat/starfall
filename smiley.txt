@@ -1,0 +1,15 @@
+--@name Smiley
+--@author badgester
+--@shared
+
+
+function draw_smiley()
+    local smiley = {
+            ":3"
+    }
+    for _, line in ipairs(smiley) do
+        print(line)
+    end
+end
+
+draw_smiley()

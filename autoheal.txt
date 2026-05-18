@@ -1,5 +1,5 @@
---@name SLM Autoheal
---@author
+--@name SLM's Autoheal
+--@author SLM
 --@server
 --[[
 автоматом лечит игрока

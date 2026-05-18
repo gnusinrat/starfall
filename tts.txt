@@ -1,0 +1,92 @@
+--@name TTS
+--@author DR. wallace breen
+--@client
+-- TTS with in-game language switching (!lang <code>) and !langs
+local snd
+local volume = 2
+local pitch = 1.0
+local lang = "ru" -- default language
+
+local LANGS = {
+    ["en"]    = "English (US)",
+    ["en-gb"] = "English (UK)",
+    ["es"]    = "Spanish",
+    ["fr"]    = "French",
+    ["de"]    = "German",
+    ["ru"]    = "Russian",
+    ["ja"]    = "Japanese",
+    ["ko"]    = "Korean",
+    ["zh-cn"] = "Chinese (Simplified)",
+    ["zh-tw"] = "Chinese (Traditional)",
+    ["ar"]    = "Arabic",
+    ["it"]    = "Italian",
+    ["pt-br"] = "Portuguese (Brazil)",
+    ["hi"]    = "Hindi"
+}
+
+-- single PlayerChat hook that handles commands + TTS
+hook.add("PlayerChat","tts_master",function(ply, msg)
+    if ply ~= owner() then return end
+    if not msg then return end
+
+    local txt = msg:Trim()
+    if txt == "" then return end
+    local low = string.lower(txt)
+
+    -- list supported languages
+    if low == "!langs" then
+        local s = "Available languages: "
+        for k,v in pairs(LANGS) do
+            s = s .. k .. " (" .. v .. "), "
+        end
+        print(string.sub(s,1,-3))
+        return "" -- hide from chat
+    end
+
+    -- set language: !lang <code>
+    if low:sub(1,6) == "!lang " then
+        local code = txt:sub(7):Trim()
+        if code == "" then
+            print("Usage: !lang <code>  (type !langs to see codes)")
+            return ""
+        end
+        local clower = string.lower(code)
+        if LANGS[clower] then
+            lang = clower
+            print("TTS language set to: " .. clower .. " (" .. LANGS[clower] .. ")")
+        else
+            print("Unknown language code: " .. code .. "  (type !langs)")
+        end
+        return "" -- hide command from chat
+    end
+
+    -- ignore other chat commands
+    local first = txt:sub(1,1)
+    if first == "!" or first == "~" or first == "/" then return end
+
+    -- Build TTS URL and play
+    local ok, enc = pcall(http.urlEncode, txt)
+    local q = enc or txt
+    local url = "http://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=" .. http.urlEncode(lang) .. "&q=" .. q
+
+    if isValid(snd) then snd:stop() end
+
+    bass.loadURL(url, "3d noblock noplay", function(channel)
+        if not channel then return end
+        snd = channel
+        snd:setPitch(pitch)
+        snd:setVolume(volume)
+        if isValid(owner()) then
+            snd:setPos(owner():getPos())
+        end
+        snd:play()
+    end)
+end)
+
+-- keep sound position updated (simple, no distance gating)
+hook.add("think","tts_follow",function()
+    if not isValid(snd) then return end
+    if isValid(owner()) then
+        snd:setPos(owner():getPos())
+    end
+end)
